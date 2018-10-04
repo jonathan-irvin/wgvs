@@ -1,0 +1,17 @@
+{
+  "name": "wgvs",
+  "version": "0.0.1",
+  "description": "WGVS homework",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "node"
+  ],
+  "author": "Jonathan Irvin",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.3"
+  }
+}
