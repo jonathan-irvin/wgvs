@@ -11,11 +11,18 @@ const dbName = 'wgvs'
 const tableName = 'transactions'
 const mongoClient = new MongoClient(connectionUrl)
 
-const findDocuments = function (db, callback) {
+const dbConnect = (err) => {
+  assert.strictEqual(null, err)
+  console.log('Connected successfully to server')
+  const db = mongoClient.db(dbName)
+  return db
+}
+
+const findDocuments = function (db, data, callback) {
   // Get the documents collection
-  const collection = db.collection('documents')
+  const collection = db.collection(tableName)
   // Find some documents
-  collection.find({ a: 3 }).toArray(function (err, docs) {
+  collection.find(data).toArray(function (err, docs) {
     assert.strictEqual(err, null)
     console.log('Found the following records')
     console.log(docs)
@@ -23,53 +30,44 @@ const findDocuments = function (db, callback) {
   })
 }
 
-const insertDocuments = function (db, callback) {
+const insertDocuments = function (db, data, callback) {
   // Get the documents collection
   const collection = db.collection(tableName)
   // Insert some documents
-  collection.insertMany([{ a: 1 }, { a: 2 }, { a: 3 }], (err, result) => {
+  collection.insertMany(data, (err, result) => {
     assert.strictEqual(err, null)
-    assert.strictEqual(3, result.result.n)
-    assert.strictEqual(3, result.ops.length)
-    console.log('Inserted 3 documents into the collection')
+    console.log('Inserted ' + result.result.n + ' documents into the collection')
     callback(result)
   })
 }
 
-const updateDocument = function (db, callback) {
+const updateDocument = function (db, data, index, callback) {
   // Get the documents collection
-  const collection = db.collection('documents')
+  const collection = db.collection(tableName)
   // Update document where a is 2, set b equal to 1
-  collection.updateOne({ a: 2 }, { $set: { b: 1 } }, function (err, result) {
+  collection.updateOne(index, { $set: data }, function (err, result) {
     assert.strictEqual(err, null)
     assert.strictEqual(1, result.result.n)
-    console.log('Updated the document with the field a equal to 2')
+    console.log('Updated transation ' + index)
     callback(result)
   })
 }
 
-const removeDocument = function (db, callback) {
+const deleteDocument = function (db, data, callback) {
   // Get the documents collection
-  const collection = db.collection('documents')
-  // Delete document where a is 3
-  collection.deleteOne({ a: 3 }, function (err, result) {
+  const collection = db.collection(tableName)
+  collection.deleteOne(data, function (err, result) {
     assert.strictEqual(err, null)
     assert.strictEqual(1, result.result.n)
-    console.log('Removed the document with the field a equal to 3')
+    console.log('Deleted ' + data)
     callback(result)
   })
 }
 
-// respond with "hello world" when a GET request is made to the homepage
 app.post('/transactions', (req, res) => {
   // Use connect method to connect to the server
   mongoClient.connect(err => {
-    assert.strictEqual(null, err)
-    console.log('Connected successfully to server')
-
-    const db = mongoClient.db(dbName)
-
-    insertDocuments(db, function () {
+    insertDocuments(dbConnect(err), req.data, function () {
       mongoClient.close()
       res.sendStatus(200)
     })
@@ -77,26 +75,27 @@ app.post('/transactions', (req, res) => {
 })
 
 app.get('/transactions', (req, res) => {
-  const findDocuments = function (db, callback) {
-    // Get the documents collection
-    const collection = db.collection(tableName)
-    // Find some documents
-    collection.find({}).toArray((err, docs) => {
-      assert.strictEqual(err, null)
-      console.log('Found the following records')
-      console.log(docs)
-      callback(docs)
-    })
-  }
-
   // Use connect method to connect to the server
   mongoClient.connect(err => {
-    assert.strictEqual(null, err)
-    console.log('Connected successfully to server')
+    findDocuments(dbConnect(err), req.data, function () {
+      mongoClient.close()
+      res.sendStatus(200)
+    })
+  })
+})
 
-    const db = mongoClient.db(dbName)
+app.delete('/transactions', (req, res) => {
+  mongoClient.connect(err => {
+    deleteDocument(dbConnect(err), req.data, function () {
+      mongoClient.close()
+      res.sendStatus(200)
+    })
+  })
+})
 
-    findDocuments(db, function () {
+app.put('/transactions', (req, res) => {
+  mongoClient.connect(err => {
+    updateDocument(dbConnect(err), req.data.data, req.data.index, function () {
       mongoClient.close()
       res.sendStatus(200)
     })
