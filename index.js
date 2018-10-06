@@ -4,6 +4,8 @@ const express = require('express')
 
 const app = express()
 const port = 3000
+const bodyParser = require('body-parser')
+app.use(bodyParser.urlencoded({ extended: true }))
 
 // Mongo
 const connectionUrl = 'mongodb://localhost:27017'
@@ -30,11 +32,11 @@ const findDocuments = function (db, data, callback) {
   })
 }
 
-const insertDocuments = function (db, data, callback) {
+const insertDocument = function (db, data, callback) {
   // Get the documents collection
   const collection = db.collection(tableName)
   // Insert some documents
-  collection.insertMany(data, (err, result) => {
+  collection.insertOne(data, (err, result) => {
     assert.strictEqual(err, null)
     console.log('Inserted ' + result.result.n + ' documents into the collection')
     callback(result)
@@ -64,38 +66,38 @@ const deleteDocument = function (db, data, callback) {
   })
 }
 
-app.post('/transactions', (req, res) => {
+app.post('/transaction', (req, res) => {
   // Use connect method to connect to the server
   mongoClient.connect(err => {
-    insertDocuments(dbConnect(err), req.data, function () {
+    insertDocument(dbConnect(err), req.body, function () {
       mongoClient.close()
       res.sendStatus(200)
     })
   })
 })
 
-app.get('/transactions', (req, res) => {
+app.get('/transaction/:id', (req, res) => {
   // Use connect method to connect to the server
   mongoClient.connect(err => {
-    findDocuments(dbConnect(err), req.data, function () {
+    findDocuments(dbConnect(err), req.body, function () {
       mongoClient.close()
       res.sendStatus(200)
     })
   })
 })
 
-app.delete('/transactions', (req, res) => {
+app.delete('/transaction', (req, res) => {
   mongoClient.connect(err => {
-    deleteDocument(dbConnect(err), req.data, function () {
+    deleteDocument(dbConnect(err), req.body, function () {
       mongoClient.close()
       res.sendStatus(200)
     })
   })
 })
 
-app.put('/transactions', (req, res) => {
+app.put('/transaction', (req, res) => {
   mongoClient.connect(err => {
-    updateDocument(dbConnect(err), req.data.data, req.data.index, function () {
+    updateDocument(dbConnect(err), req.body, function () {
       mongoClient.close()
       res.sendStatus(200)
     })
