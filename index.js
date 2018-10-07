@@ -38,7 +38,7 @@ const insertDocument = function (db, data, callback) {
   // Insert some documents
   collection.insertOne(data, (err, result) => {
     assert.strictEqual(err, null)
-    console.log('Inserted ' + result.result.n + ' documents into the collection')
+    console.log('Inserted ' + result.result.n + ' document into the collection.')
     callback(result)
   })
 }
