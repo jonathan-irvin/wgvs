@@ -1,107 +1,116 @@
-const MongoClient = require('mongodb').MongoClient
-const assert = require('assert')
-const express = require('express')
+const MongoClient = require('mongodb').MongoClient;
+const assert = require('assert');
+const express = require('express');
 
-const app = express()
-const port = 3000
-const bodyParser = require('body-parser')
-app.use(bodyParser.urlencoded({ extended: true }))
+const app = express();
+const port = 3000;
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Mongo
-const connectionUrl = 'mongodb://localhost:27017'
-const dbName = 'wgvs'
-const tableName = 'transactions'
-const mongoClient = new MongoClient(connectionUrl)
+const connectionUrl = 'mongodb://localhost:27017';
+const dbName = 'wgvs';
+const tableName = 'transactions';
+const mongoClient = new MongoClient(connectionUrl);
 
-const dbConnect = (err) => {
-  assert.strictEqual(null, err)
-  console.log('Connected successfully to server')
-  const db = mongoClient.db(dbName)
-  return db
-}
+const dbConnect = err => {
+  if (err) throw err;
+  console.log('Connected successfully to server');
+  const db = mongoClient.db(dbName);
+  return db;
+};
 
-const findDocuments = function (db, data, callback) {
+const findOne = function(db, data, callback) {
   // Get the documents collection
-  const collection = db.collection(tableName)
+  const collection = db.collection(tableName);
   // Find some documents
-  collection.find(data).toArray(function (err, docs) {
-    assert.strictEqual(err, null)
-    console.log('Found the following records')
-    console.log(docs)
-    callback(docs)
-  })
-}
+  collection.find(data, function(error, docs) {
+    if (error) callback(error);
+    else {
+      console.log('Found the following records');
+      console.log(docs);
+      callback(docs);
+    }
+  });
+};
 
-const insertDocument = function (db, data, callback) {
+const insertDocument = function(db, data, callback) {
   // Get the documents collection
-  const collection = db.collection(tableName)
+  const collection = db.collection(tableName);
   // Insert some documents
-  collection.insertOne(data, (err, result) => {
-    assert.strictEqual(err, null)
-    console.log('Inserted ' + result.result.n + ' document into the collection.')
-    callback(result)
-  })
-}
+  collection.insertOne(data, (error, result) => {
+    if (error) callback(error);
+    else {
+      console.log(
+        'Inserted ' +
+          result.result.n +
+          ' document into the collection. id: ' +
+          result.insertedId
+      );
+      callback(result);
+    }
+  });
+};
 
-const updateDocument = function (db, data, index, callback) {
+const updateDocument = function(db, data, index, callback) {
   // Get the documents collection
-  const collection = db.collection(tableName)
+  const collection = db.collection(tableName);
   // Update document where a is 2, set b equal to 1
-  collection.updateOne(index, { $set: data }, function (err, result) {
-    assert.strictEqual(err, null)
-    assert.strictEqual(1, result.result.n)
-    console.log('Updated transation ' + index)
-    callback(result)
-  })
-}
+  collection.updateOne(index, { $set: data }, function(err, result) {
+    if (error) callback(error);
+    else {
+      console.log('Updated transation ' + index);
+      callback(result);
+    }
+  });
+};
 
-const deleteDocument = function (db, data, callback) {
+const deleteDocument = function(db, data, callback) {
   // Get the documents collection
-  const collection = db.collection(tableName)
-  collection.deleteOne(data, function (err, result) {
-    assert.strictEqual(err, null)
-    assert.strictEqual(1, result.result.n)
-    console.log('Deleted ' + data)
-    callback(result)
-  })
-}
+  const collection = db.collection(tableName);
+  collection.deleteOne(data, function(error, result) {
+    if (error) callback(error);
+    else {
+      console.log('Deleted ' + result.deletedId);
+      callback(result);
+    }
+  });
+};
 
 app.post('/transaction', (req, res) => {
-  // Use connect method to connect to the server
   mongoClient.connect(err => {
-    insertDocument(dbConnect(err), req.body, function () {
-      mongoClient.close()
-      res.sendStatus(200)
-    })
-  })
-})
+    insertDocument(dbConnect(err), req.body, function(data) {
+      res.status(200).send(data);
+    });
+  });
+  mongoClient.close();
+});
 
 app.get('/transaction/:id', (req, res) => {
-  // Use connect method to connect to the server
   mongoClient.connect(err => {
-    findDocuments(dbConnect(err), req.body, function () {
-      mongoClient.close()
-      res.sendStatus(200)
-    })
-  })
-})
+    findOne(dbConnect(err), { '_id': req.params.id }, function(data) {
+      res.status(200).send(data);
+    });
+  });
+  mongoClient.close();
+});
 
-app.delete('/transaction', (req, res) => {
+app.delete('/transaction/:id', (req, res) => {
   mongoClient.connect(err => {
-    deleteDocument(dbConnect(err), req.body, function () {
-      mongoClient.close()
-      res.sendStatus(200)
-    })
-  })
-})
+    deleteDocument(dbConnect(err), { _id: req.params.id }, function(data) {
+      res.status(200).send(data);
+    });
+  });
+  mongoClient.close();
+});
 
-app.put('/transaction', (req, res) => {
+app.put('/transaction/:id', (req, res) => {
   mongoClient.connect(err => {
-    updateDocument(dbConnect(err), req.body, function () {
-      mongoClient.close()
-      res.sendStatus(200)
-    })
-  })
-})
+    updateDocument(dbConnect(err), { _id: req.params.id }, function(data) {
+      res.status(200).send(data);
+    });
+  });
+  mongoClient.close();
+});
 
-app.listen(port, () => console.log(`Homework listening on port ${port}!`))
+app.listen(port, () => console.log(`Homework listening on port ${port}!`));
