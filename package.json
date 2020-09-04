@@ -16,7 +16,7 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
-    "mongodb": "^3.1.6"
+    "mongodb": "^3.1.13"
   },
   "devDependencies": {
     "cz-conventional-changelog": "^2.1.0",
